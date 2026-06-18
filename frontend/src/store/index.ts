@@ -68,7 +68,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (filters.category) params.set('category', filters.category)
       if (filters.search) params.set('search', filters.search)
       params.set('page', '1')
-      params.set('page_size', '50') // 分批加载，减少首屏等待
+      params.set('page_size', '50') // 分批加载，减少首屏白屏时间
 
       const res = await fetch(`${API_BASE}/questions?${params}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
