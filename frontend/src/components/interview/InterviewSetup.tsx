@@ -2,6 +2,7 @@
 // InterviewSetup — 面试开始前的配置面板
 // ============================================================
 
+import { useState } from 'react'
 import { Card, Radio, Select, Button, Space } from 'antd'
 import {
   PlayCircleOutlined,
@@ -20,11 +21,11 @@ const DIFF_OPTIONS: { value: Difficulty; label: string; desc: string }[] = [
 ]
 
 export default function InterviewSetup({ onStart }: Props) {
+  const [difficulty, setDifficulty] = useState<Difficulty>('medium')
+  const [totalQuestions, setTotalQuestions] = useState(3)
+
   const handleStart = () => {
-    onStart({
-      difficulty: 'medium',
-      totalQuestions: 3,
-    })
+    onStart({ difficulty, totalQuestions })
   }
 
   return (
@@ -52,7 +53,8 @@ export default function InterviewSetup({ onStart }: Props) {
               选择难度
             </label>
             <Radio.Group
-              defaultValue="medium"
+              value={difficulty}
+              onChange={(e) => setDifficulty(e.target.value)}
               className="w-full"
             >
               <Space direction="vertical" className="w-full">
@@ -79,7 +81,8 @@ export default function InterviewSetup({ onStart }: Props) {
               面试题数
             </label>
             <Select
-              defaultValue={3}
+              value={totalQuestions}
+              onChange={(v) => setTotalQuestions(v)}
               className="w-full"
               options={[
                 { value: 1, label: '1 题 — 快速体验' },

@@ -4,25 +4,24 @@
 
 import { Layout, Menu } from 'antd'
 import { HomeOutlined, RobotOutlined } from '@ant-design/icons'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 
 const { Header, Content } = Layout
 
 export default function AppLayout() {
   const navigate = useNavigate()
+  const location = useLocation()
 
   const navItems = [
     { key: '/', icon: <HomeOutlined />, label: '面试题库' },
+    { key: '/interview', icon: <RobotOutlined />, label: '模拟面试' },
     // TODO: 上线时取消注释
-    // { key: '/interview', icon: <RobotOutlined />, label: '模拟面试' },
     // { key: '/admin', icon: <SettingOutlined />, label: '管理' },
   ]
 
-  const selectedKey = '/'
-  // TODO: 上线时取消注释
-  // location.pathname === '/admin' ? '/admin'
-  // : location.pathname.startsWith('/interview') ? '/interview'
-  // : '/'
+  const selectedKey =
+    location.pathname.startsWith('/interview') ? '/interview'
+    : '/'
 
   return (
     <Layout className="min-h-screen">
