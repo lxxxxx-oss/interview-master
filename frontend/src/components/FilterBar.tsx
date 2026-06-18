@@ -106,12 +106,16 @@ export default function FilterBar() {
             else handleSelectChange('state', v)
           }}
           style={{ width: 140 }}
+          size="small"
         >
           <Option value="unlearned">🔘 未学</Option>
           <Option value="all">🔘 全部</Option>
           <Option value="bookmarked">⭐ 收藏</Option>
           <Option value="mastered">✅ 已学会</Option>
         </Select>
+        <span className="text-[11px] text-gray-400 ml-2 select-none">
+          状态数据仅存储在浏览器本地缓存
+        </span>
       </Space>
     </div>
   )
