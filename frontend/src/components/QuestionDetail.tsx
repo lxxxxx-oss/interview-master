@@ -192,9 +192,18 @@ export default function QuestionDetailPage() {
             </button>
           </Tooltip>
         </div>
-        <h1 className="text-xl md:text-2xl font-semibold text-gray-900 leading-relaxed">
+        <h1 className="text-xl md:text-2xl font-semibold text-gray-900 leading-relaxed mb-4">
           {q.title}
         </h1>
+        {/* 预期关键词 — 帮用户了解评分维度 */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-xs text-gray-400 mr-1">考察点：</span>
+          {(Array.isArray(q.expected_keywords) ? q.expected_keywords : []).map((kw: string) => (
+            <Tag key={kw} className="text-xs bg-blue-50 text-blue-600 border-blue-100">
+              {kw}
+            </Tag>
+          ))}
+        </div>
       </Card>
 
       {/* ─── 提示 & 答案 — 并列折叠面板 ──────── */}
@@ -205,7 +214,6 @@ export default function QuestionDetailPage() {
         ]}
         onChange={(keys) => {
           const keySet = new Set(Array.isArray(keys) ? keys : [keys])
-          // 对比当前状态，只切换变化了的那个
           const hintNow = keySet.has('hint')
           const answerNow = keySet.has('answer')
           if (hintNow !== revealHint) toggleHint()

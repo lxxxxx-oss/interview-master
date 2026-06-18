@@ -125,7 +125,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const questions: Question[] = data.questions.map((q: any) => ({
         id: q.id, title: q.title, difficulty: q.difficulty,
         company: q.company, category: q.category, hint: q.hint,
-        answer: q.answer, source: q.source, sourceUrl: q.source_url,
+        answer: q.answer, expected_keywords: q.expected_keywords || [],
+        source: q.source, sourceUrl: q.source_url,
         createdAt: q.created_at,
       }))
 
@@ -207,7 +208,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const questions: Question[] = data.questions.map((q: any) => ({
         id: q.id, title: q.title, difficulty: q.difficulty,
         company: q.company, category: q.category, hint: q.hint,
-        answer: q.answer, source: q.source, sourceUrl: q.source_url,
+        answer: q.answer, expected_keywords: q.expected_keywords || [],
+        source: q.source, sourceUrl: q.source_url,
         createdAt: q.created_at,
       }))
 
@@ -254,6 +256,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         category: q.category,
         hint: q.hint,
         answer: q.answer,
+        expected_keywords: q.expected_keywords || [],
         source: q.source,
         sourceUrl: q.source_url,
         createdAt: q.created_at,
