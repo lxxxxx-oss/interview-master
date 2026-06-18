@@ -45,13 +45,15 @@ export default function QuestionDetailPage() {
     toggleAnswer,
     questionStates,
     setQuestionState,
-    questions,
+    filteredQuestions,
+    fetchQuestions,
   } = useAppStore()
 
-  // 计算上一题/下一题 ID（基于当前筛选后的列表）
-  const currentIndex = questions.findIndex((q) => q.id === Number(id))
-  const prevId = currentIndex > 0 ? questions[currentIndex - 1].id : null
-  const nextId = currentIndex < questions.length - 1 ? questions[currentIndex + 1].id : null
+  // 计算上一题/下一题 ID（基于筛选后的列表）
+  const currentIndex = filteredQuestions.findIndex((q) => q.id === Number(id))
+  const totalFiltered = filteredQuestions.length
+  const prevId = currentIndex > 0 ? filteredQuestions[currentIndex - 1].id : null
+  const nextId = currentIndex < totalFiltered - 1 ? filteredQuestions[currentIndex + 1].id : null
 
   const navigateToQuestion = (qid: number) => {
     navigate(`/question/${qid}`)
@@ -65,7 +67,11 @@ export default function QuestionDetailPage() {
     if (!id) return
     setLoading(true)
     setError(null)
-    fetchQuestionDetail(Number(id))
+    // 并行加载详请和列表，确保上下题按钮有数据
+    Promise.all([
+      fetchQuestionDetail(Number(id)),
+      filteredQuestions.length === 0 ? fetchQuestions() : Promise.resolve(),
+    ])
       .catch((e: any) => setError(e.message || 'Question not found'))
       .finally(() => setLoading(false))
   }, [id])
@@ -176,7 +182,7 @@ export default function QuestionDetailPage() {
         </button>
 
         <span className="text-xs text-gray-400">
-          {currentIndex + 1} / {questions.length}
+          {currentIndex >= 0 ? currentIndex + 1 : '?'} / {totalFiltered}
         </span>
       </div>
 
@@ -326,32 +332,34 @@ export default function QuestionDetailPage() {
         onClick={() => prevId && navigateToQuestion(prevId)}
         disabled={!prevId}
         title={prevId ? '上一题' : '已是第一题'}
-        className={`fixed left-4 top-1/2 -translate-y-1/2 z-40
-          w-14 h-14 flex items-center justify-center gap-1.5
-          bg-white/90 backdrop-blur-sm shadow-lg rounded-full
-          border transition-all duration-200 cursor-pointer
+        className={`fixed left-0 top-1/2 -translate-y-1/2 z-40
+          flex items-center gap-2 pl-3 pr-5 py-3
+          bg-[#1677ff] shadow-lg shadow-blue-500/30
+          rounded-r-2xl transition-all duration-300 cursor-pointer border-0
           ${prevId
-            ? 'border-gray-200 text-gray-600 hover:text-blue-500 hover:border-blue-300 hover:shadow-xl hover:scale-110'
-            : 'border-gray-100 text-gray-300 cursor-not-allowed opacity-0 pointer-events-none'
+            ? 'text-white hover:bg-[#4096ff] hover:shadow-xl hover:shadow-blue-400/40 hover:pl-4 hover:pr-6'
+            : 'opacity-0 pointer-events-none'
           }`}
       >
-        <ArrowLeftOutlined className="text-xl" />
+        <ArrowLeftOutlined className="text-lg" />
+        <span className="text-sm font-semibold tracking-wide">上一题</span>
       </button>
 
       <button
         onClick={() => nextId && navigateToQuestion(nextId)}
         disabled={!nextId}
         title={nextId ? '下一题' : '已是最后一题'}
-        className={`fixed right-4 top-1/2 -translate-y-1/2 z-40
-          w-14 h-14 flex items-center justify-center gap-1.5
-          bg-white/90 backdrop-blur-sm shadow-lg rounded-full
-          border transition-all duration-200 cursor-pointer
+        className={`fixed right-0 top-1/2 -translate-y-1/2 z-40
+          flex items-center gap-2 pl-5 pr-3 py-3
+          bg-[#1677ff] shadow-lg shadow-blue-500/30
+          rounded-l-2xl transition-all duration-300 cursor-pointer border-0
           ${nextId
-            ? 'border-gray-200 text-gray-600 hover:text-blue-500 hover:border-blue-300 hover:shadow-xl hover:scale-110'
-            : 'border-gray-100 text-gray-300 cursor-not-allowed opacity-0 pointer-events-none'
+            ? 'text-white hover:bg-[#4096ff] hover:shadow-xl hover:shadow-blue-400/40 hover:pl-6 hover:pr-4'
+            : 'opacity-0 pointer-events-none'
           }`}
       >
-        <ArrowRightOutlined className="text-xl" />
+        <span className="text-sm font-semibold tracking-wide">下一题</span>
+        <ArrowRightOutlined className="text-lg" />
       </button>
     </div>
   )
