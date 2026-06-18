@@ -11,6 +11,7 @@ import { useAppStore } from '../store'
 const COLUMNS = 3
 const CARD_HEIGHT = 220
 const LOAD_MORE_THRESHOLD = 800 // 距底部多少 px 触发加载
+const SCROLL_KEY = 'home_scroll_y'
 
 export default function QuestionGrid() {
   const { filteredQuestions, loading, hasMore, loadMore } = useAppStore()
@@ -41,9 +42,13 @@ export default function QuestionGrid() {
   })
 
   // 独立 scroll 监听 — 不依赖 useVirtualizer.onChange
+  // 同时保存滚动位置到 sessionStorage，返回时恢复
+  const saveScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
     const handleScroll = () => {
-      if (!hasMoreRef.current || loadingRef.current || loadingMoreRef.current) return
+      if (!hasMoreRef.current || loadingRef.current || loadingMoreRef.current) {
+        // 不影响 loadMore 判断
+      }
       const el = document.documentElement
       const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
 
@@ -53,9 +58,18 @@ export default function QuestionGrid() {
           loadingMoreRef.current = false
         })
       }
+
+      // 防抖保存滚动位置
+      if (saveScrollTimerRef.current) clearTimeout(saveScrollTimerRef.current)
+      saveScrollTimerRef.current = setTimeout(() => {
+        sessionStorage.setItem(SCROLL_KEY, String(el.scrollTop))
+      }, 200)
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
-    return () => window.removeEventListener('scroll', handleScroll)
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+      if (saveScrollTimerRef.current) clearTimeout(saveScrollTimerRef.current)
+    }
   }, [loadMore])
 
   // 数据量变化时强制重新测量
@@ -64,12 +78,29 @@ export default function QuestionGrid() {
       const wasFiltered = totalRef.current > 0 && filteredQuestions.length <= 50 && filteredQuestions.length < totalRef.current
       totalRef.current = filteredQuestions.length
       virtualizer.measure()
-      // 如果是筛选导致数据量骤降（从多页变为少于一页），滚回顶部
+      // 如果是筛选导致数据量骤降，滚回顶部
       if (wasFiltered) {
         window.scrollTo({ top: 0, behavior: 'smooth' })
       }
     }
   }, [filteredQuestions.length, virtualizer])
+
+  // 首次渲染后恢复滚动位置
+  useEffect(() => {
+    if (loading || filteredQuestions.length === 0) return
+    const saved = sessionStorage.getItem(SCROLL_KEY)
+    if (saved) {
+      const y = Number(saved)
+      const maxScroll = document.documentElement.scrollHeight - document.documentElement.clientHeight
+      if (y > 0 && y < maxScroll) {
+        // 推迟到下一帧，等虚拟滚动渲染完
+        requestAnimationFrame(() => {
+          document.documentElement.scrollTop = y
+        })
+      }
+      sessionStorage.removeItem(SCROLL_KEY)
+    }
+  }, [])  // 只执行一次，首次渲染完成后恢复
 
   if (loading && filteredQuestions.length === 0) {
     return (
