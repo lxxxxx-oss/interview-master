@@ -94,7 +94,7 @@ export default function Flashcard({ question }: { question: Question }) {
               onClick={(e) => e.stopPropagation()}
             >
               <BulbOutlined />
-              Hint
+              提示
             </button>
           </Popover>
         </div>
