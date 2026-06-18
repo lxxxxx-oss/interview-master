@@ -20,7 +20,7 @@ import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { useAppStore } from '../store'
-import type { QuestionDetail as QD, Difficulty, QuestionCategory } from '../types'
+import type { QuestionDetail as QD } from '../types'
 
 const DIFFICULTY_MAP: Record<string, { label: string; color: string }> = {
   easy: { label: '初级', color: 'green' },
@@ -50,7 +50,6 @@ export default function QuestionDetailPage() {
   const [editOpen, setEditOpen] = useState(false)
   const [editForm] = Form.useForm()
   const [saving, setSaving] = useState(false)
-  const isAdmin = true  // 当前直接放行，后续登录系统接入后改为实际校验
 
   // ─── 编辑/删除操作 ───────────────────────
   const handleEdit = () => {

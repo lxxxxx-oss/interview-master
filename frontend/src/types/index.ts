@@ -17,7 +17,7 @@ export interface Question {
   category: QuestionCategory
   hint: string
   answer: string // Markdown
-  source: 'local' | 'nowcoder'
+  source: 'local' | 'nowcoder' | 'hub'
   sourceUrl: string | null
   createdAt: string
 }

@@ -3,14 +3,13 @@
 // ============================================================
 
 import { Layout, Menu } from 'antd'
-import { HomeOutlined, SettingOutlined, RobotOutlined } from '@ant-design/icons'
-import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { HomeOutlined, RobotOutlined } from '@ant-design/icons'
+import { Outlet, useNavigate } from 'react-router-dom'
 
 const { Header, Content } = Layout
 
 export default function AppLayout() {
   const navigate = useNavigate()
-  const location = useLocation()
 
   const navItems = [
     { key: '/', icon: <HomeOutlined />, label: '面试题库' },

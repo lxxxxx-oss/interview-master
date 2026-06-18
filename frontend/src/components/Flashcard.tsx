@@ -38,7 +38,7 @@ const SOURCE_ICON: Record<string, string> = {
 
 export default function Flashcard({ question }: { question: Question }) {
   const navigate = useNavigate()
-  const { deleteQuestion, fetchQuestions } = useAppStore()
+  const { deleteQuestion } = useAppStore()
   const diff = DIFFICULTY_MAP[question.difficulty] || DIFFICULTY_MAP.easy
   const [hover, setHover] = useState(false)
   const hintRef = useRef<HTMLButtonElement>(null)
