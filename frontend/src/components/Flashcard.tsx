@@ -75,7 +75,7 @@ export default function Flashcard({ question }: { question: Question }) {
         <div className="flex items-center gap-2">
           {/* Hint button — pops up outside the card on hover */}
           <Popover
-            trigger="click"
+            trigger="hover"
             placement="bottomRight"
             title={null}
             content={
