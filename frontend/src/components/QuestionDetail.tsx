@@ -13,12 +13,17 @@ import {
   ArrowLeftOutlined,
   GithubOutlined,
   CaretRightOutlined,
+  CheckCircleOutlined,
+  CheckCircleFilled,
+  StarOutlined,
+  StarFilled,
 } from '@ant-design/icons'
+import { Tooltip } from 'antd'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { useAppStore } from '../store'
-import type { QuestionDetail as QD } from '../types'
+import type { QuestionDetail as QD, QuestionState } from '../types'
 
 const DIFFICULTY_MAP: Record<string, { label: string; color: string }> = {
   easy: { label: '初级', color: 'green' },
@@ -37,6 +42,8 @@ export default function QuestionDetailPage() {
     fetchQuestionDetail,
     toggleHint,
     toggleAnswer,
+    questionStates,
+    setQuestionState,
   } = useAppStore()
 
   const [loading, setLoading] = useState(true)
@@ -77,6 +84,15 @@ export default function QuestionDetailPage() {
 
   const q: QD = currentQuestion
   const diff = DIFFICULTY_MAP[q.difficulty]
+  const currentState: QuestionState | undefined = questionStates[q.id]
+
+  const handleStateToggle = (state: QuestionState) => {
+    if (currentState === state) {
+      setQuestionState(q.id, null)
+    } else {
+      setQuestionState(q.id, state)
+    }
+  }
 
   const collapseItems = [
     {
@@ -156,6 +172,25 @@ export default function QuestionDetailPage() {
             <Tag className="text-sm px-3 py-0.5">{q.company}</Tag>
           )}
           <Tag className="text-sm px-3 py-0.5">{q.category}</Tag>
+          {/* State buttons */}
+          <Tooltip title={currentState === 'mastered' ? '取消已学会' : '标记已学会'}>
+            <button
+              className={`flex items-center gap-0.5 text-xs cursor-pointer border-0 rounded-full px-2 py-1 font-medium transition-colors
+                ${currentState === 'mastered' ? 'bg-green-50 text-green-500' : 'bg-gray-50 text-gray-400 hover:text-green-500 hover:bg-green-50'}`}
+              onClick={() => handleStateToggle('mastered')}
+            >
+              {currentState === 'mastered' ? <CheckCircleFilled /> : <CheckCircleOutlined />}
+            </button>
+          </Tooltip>
+          <Tooltip title={currentState === 'bookmarked' ? '取消收藏' : '收藏'}>
+            <button
+              className={`flex items-center gap-0.5 text-xs cursor-pointer border-0 rounded-full px-2 py-1 font-medium transition-colors
+                ${currentState === 'bookmarked' ? 'bg-amber-50 text-amber-500' : 'bg-gray-50 text-gray-400 hover:text-amber-500 hover:bg-amber-50'}`}
+              onClick={() => handleStateToggle('bookmarked')}
+            >
+              {currentState === 'bookmarked' ? <StarFilled /> : <StarOutlined />}
+            </button>
+          </Tooltip>
         </div>
         <h1 className="text-xl md:text-2xl font-semibold text-gray-900 leading-relaxed">
           {q.title}

@@ -8,9 +8,10 @@ import QuestionGrid from '../components/QuestionGrid'
 import { useAppStore } from '../store'
 
 export default function HomePage() {
-  const { fetchFilterOptions, fetchQuestions } = useAppStore()
+  const { fetchFilterOptions, fetchQuestions, loadQuestionStates } = useAppStore()
 
   useEffect(() => {
+    loadQuestionStates()
     fetchFilterOptions()
     fetchQuestions()
   }, [])

@@ -3,12 +3,17 @@
 // ============================================================
 
 import { useState, useRef } from 'react'
-import { Card, Tag, Popover } from 'antd'
+import { Card, Tag, Popover, Tooltip } from 'antd'
 import {
   BulbOutlined,
+  CheckCircleOutlined,
+  StarOutlined,
+  CheckCircleFilled,
+  StarFilled,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
-import type { Question } from '../types'
+import type { Question, QuestionState } from '../types'
+import { useAppStore } from '../store'
 
 const DIFFICULTY_MAP: Record<string, { label: string; color: string }> = {
   easy: { label: 'Easy', color: 'green' },
@@ -34,7 +39,19 @@ export default function Flashcard({ question }: { question: Question }) {
   const [hover, setHover] = useState(false)
   const hintRef = useRef<HTMLButtonElement>(null)
 
+  const { questionStates, setQuestionState } = useAppStore()
+  const currentState: QuestionState | undefined = questionStates[question.id]
+
   const handleDetail = () => navigate(`/question/${question.id}`)
+
+  const handleStateToggle = (e: React.MouseEvent, state: QuestionState) => {
+    e.stopPropagation()
+    if (currentState === state) {
+      setQuestionState(question.id, null)  // cancel
+    } else {
+      setQuestionState(question.id, state) // set (auto-switches if was other state)
+    }
+  }
 
   return (
     <Card
@@ -70,8 +87,30 @@ export default function Flashcard({ question }: { question: Question }) {
         </p>
       </div>
 
-      {/* Bottom: hint button that floats up on hover */}
-      <div className="flex items-center justify-end text-xs text-gray-400 relative">
+      {/* Bottom: state buttons + hint button */}
+      <div className="flex items-center justify-between text-xs text-gray-400 relative">
+        {/* State buttons — always visible */}
+        <div className="flex items-center gap-1">
+          <Tooltip title={currentState === 'mastered' ? '取消已学会' : '标记已学会'}>
+            <button
+              className={`flex items-center gap-0.5 transition-colors duration-200 cursor-pointer border-0 rounded-full px-2 py-1 text-xs font-medium
+                ${currentState === 'mastered' ? 'bg-green-50 text-green-500' : 'bg-gray-50 text-gray-400 hover:text-green-500 hover:bg-green-50'}`}
+              onClick={(e) => handleStateToggle(e, 'mastered')}
+            >
+              {currentState === 'mastered' ? <CheckCircleFilled /> : <CheckCircleOutlined />}
+            </button>
+          </Tooltip>
+          <Tooltip title={currentState === 'bookmarked' ? '取消收藏' : '收藏'}>
+            <button
+              className={`flex items-center gap-0.5 transition-colors duration-200 cursor-pointer border-0 rounded-full px-2 py-1 text-xs font-medium
+                ${currentState === 'bookmarked' ? 'bg-amber-50 text-amber-500' : 'bg-gray-50 text-gray-400 hover:text-amber-500 hover:bg-amber-50'}`}
+              onClick={(e) => handleStateToggle(e, 'bookmarked')}
+            >
+              {currentState === 'bookmarked' ? <StarFilled /> : <StarOutlined />}
+            </button>
+          </Tooltip>
+        </div>
+
         <div className="flex items-center gap-2">
           {/* Hint button — pops up outside the card on hover */}
           <Popover

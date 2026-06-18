@@ -39,12 +39,16 @@ export interface QuestionDetail extends Question {
   references: CodeReference[]
 }
 
+/** 题目状态（localStorage 持久化） */
+export type QuestionState = 'mastered' | 'bookmarked'
+
 /** 筛选条件 */
 export interface Filters {
   difficulty: string
   company: string
   search: string
   category: string
+  state: string
 }
 
 /** 筛选选项 */

@@ -3,15 +3,33 @@
 // ============================================================
 
 import { create } from 'zustand'
-import type { Question, QuestionDetail, Filters, FilterOptions, Pagination } from '../types'
+import type { Question, QuestionDetail, QuestionState, Filters, FilterOptions, Pagination } from '../types'
 
 const API_BASE = '/api'
+const LS_KEY = 'question_states'
+
+// ─── 辅助：按用户状态过滤题目 ──────────────────
+function applyStateFilter(questions: Question[], stateFilter: string, states: Record<number, QuestionState>): Question[] {
+  if (!stateFilter || stateFilter === '') {
+    // 默认：排除已学会的题，保留收藏和未标记的题
+    return questions.filter(q => states[q.id] !== 'mastered')
+  }
+  if (stateFilter === 'all') return questions
+  if (stateFilter === 'mastered') return questions.filter(q => states[q.id] === 'mastered')
+  if (stateFilter === 'bookmarked') return questions.filter(q => states[q.id] === 'bookmarked')
+  return questions
+}
 
 interface AppStore {
   // ─── 筛选状态 ─────────────────────────────
   filters: Filters
   setFilters: (f: Partial<Filters>) => void
   filterOptions: FilterOptions
+
+  // ─── 题目状态（localStorage） ─────────────
+  questionStates: Record<number, QuestionState>
+  loadQuestionStates: () => void
+  setQuestionState: (id: number, state: QuestionState | null) => void
 
   // ─── 题目列表（无限滚动） ─────────────────
   questions: Question[]
@@ -48,11 +66,34 @@ const FETCH_SIZE = 50  // 每次从后端拉取的题目数
 
 export const useAppStore = create<AppStore>((set, get) => ({
   // ─── 筛选状态 ─────────────────────────────
-  filters: { difficulty: '', company: '', search: '', category: '' },
+  filters: { difficulty: '', company: '', search: '', category: '', state: '' },
   setFilters: (f) => {
     set((s) => ({ filters: { ...s.filters, ...f } }))
   },
   filterOptions: { difficulties: [], companies: [], categories: [] },
+
+  // ─── 题目状态（localStorage） ─────────────
+  questionStates: {},
+
+  loadQuestionStates: () => {
+    try {
+      const raw = localStorage.getItem(LS_KEY)
+      if (raw) set({ questionStates: JSON.parse(raw) })
+    } catch { /* corrupted data, reset */ }
+  },
+
+  setQuestionState: (id, state) => {
+    set((s) => {
+      const next = { ...s.questionStates }
+      if (state === null) {
+        delete next[id]
+      } else {
+        next[id] = state
+      }
+      localStorage.setItem(LS_KEY, JSON.stringify(next))
+      return { questionStates: next }
+    })
+  },
 
   // ─── 题目列表（无限滚动） ─────────────────
   questions: [],
@@ -84,9 +125,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
         createdAt: q.created_at,
       }))
 
+      const filtered = applyStateFilter(questions, filters.state, get().questionStates)
+
       set({
         questions,
-        filteredQuestions: questions,
+        filteredQuestions: filtered,
         pagination: { page: 1, pageSize: FETCH_SIZE, total: data.total },
         hasMore: questions.length < data.total,
       })
@@ -126,9 +169,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
       }))
 
       const merged = [...questions, ...newQuestions]
+      const filtered = applyStateFilter(merged, filters.state, get().questionStates)
       set({
         questions: merged,
-        filteredQuestions: merged,
+        filteredQuestions: filtered,
         pagination: { ...pagination, page: nextPage, total: data.total },
         hasMore: merged.length < data.total,
       })
@@ -163,9 +207,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
         createdAt: q.created_at,
       }))
 
+      const filtered = applyStateFilter(questions, filters.state, get().questionStates)
+
       set({
         questions,
-        filteredQuestions: questions,
+        filteredQuestions: filtered,
         pagination: { page: 1, pageSize: FETCH_SIZE, total: data.total },
         hasMore: questions.length < data.total,
       })
@@ -321,10 +367,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       // 立即从本地状态中移除已删题目，无需等待重新 fetch
-      set((s) => ({
-        questions: s.questions.filter((q) => q.id !== id),
-        filteredQuestions: s.filteredQuestions.filter((q) => q.id !== id),
-      }))
+      set((s) => {
+        const questions = s.questions.filter((q) => q.id !== id)
+        const filtered = applyStateFilter(questions, s.filters.state, s.questionStates)
+        return { questions, filteredQuestions: filtered }
+      })
       return true
     } catch (e: any) {
       console.error('deleteQuestion failed:', e)

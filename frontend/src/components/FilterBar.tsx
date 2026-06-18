@@ -96,6 +96,18 @@ export default function FilterBar() {
             <Option key={c} value={c}>{c}</Option>
           ))}
         </Select>
+
+        <Select
+          placeholder="学习状态"
+          value={filters.state || ''}
+          onChange={(v) => handleSelectChange('state', v === 'all' ? '' : v)}
+          style={{ width: 140 }}
+        >
+          <Option value="">🔘 未学</Option>
+          <Option value="all">🔘 全部</Option>
+          <Option value="bookmarked">⭐ 收藏</Option>
+          <Option value="mastered">✅ 已学会</Option>
+        </Select>
       </Space>
     </div>
   )
