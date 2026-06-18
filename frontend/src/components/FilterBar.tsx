@@ -1,7 +1,8 @@
 // ============================================================
-// FilterBar — 搜索 + 难度/公司/标签筛选
+// FilterBar — 搜索 + 难度/公司/标签筛选（搜索框 300ms 防抖）
 // ============================================================
 
+import { useRef, useCallback, useEffect } from 'react'
 import { Input, Select, Space } from 'antd'
 import { SearchOutlined } from '@ant-design/icons'
 import { useAppStore } from '../store'
@@ -14,13 +15,33 @@ const DIFFICULTY_LABELS: Record<string, string> = {
   hard: '🔴 高级',
 }
 
+const DEBOUNCE_MS = 300
+
 export default function FilterBar() {
   const { filters, setFilters, filterOptions, applyFilters } = useAppStore()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const handleChange = (key: string, value: string | undefined) => {
+  // 组件卸载时清理定时器
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
+
+  const handleSelectChange = (key: string, value: string | undefined) => {
     setFilters({ [key]: value || '' })
+    // 下拉选择即时触发，无需防抖
     applyFilters()
   }
+
+  const handleSearchChange = useCallback((value: string) => {
+    setFilters({ search: value })
+    // 搜索输入防抖 300ms
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      applyFilters()
+    }, DEBOUNCE_MS)
+  }, [])
 
   return (
     <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 mb-6">
@@ -29,16 +50,16 @@ export default function FilterBar() {
           placeholder="搜索题目关键词…"
           prefix={<SearchOutlined className="text-gray-400" />}
           value={filters.search}
-          onChange={(e) => handleChange('search', e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           allowClear
-          onClear={() => handleChange('search', '')}
+          onClear={() => handleSelectChange('search', '')}
           style={{ width: 280 }}
         />
 
         <Select
           placeholder="难度筛选"
           value={filters.difficulty || undefined}
-          onChange={(v) => handleChange('difficulty', v === 'all' ? '' : v)}
+          onChange={(v) => handleSelectChange('difficulty', v === 'all' ? '' : v)}
           style={{ width: 140 }}
         >
           <Option value="all">🔘 不限</Option>
@@ -50,7 +71,7 @@ export default function FilterBar() {
         <Select
           placeholder="公司筛选"
           value={filters.company || undefined}
-          onChange={(v) => handleChange('company', v === 'all' ? '' : v)}
+          onChange={(v) => handleSelectChange('company', v === 'all' ? '' : v)}
           style={{ width: 140 }}
         >
           <Option value="all">🔘 不限</Option>
@@ -62,7 +83,7 @@ export default function FilterBar() {
         <Select
           placeholder="标签筛选"
           value={filters.category || undefined}
-          onChange={(v) => handleChange('category', v === 'all' ? '' : v)}
+          onChange={(v) => handleSelectChange('category', v === 'all' ? '' : v)}
           style={{ width: 160 }}
         >
           <Option value="all">🔘 不限</Option>

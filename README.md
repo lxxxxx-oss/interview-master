@@ -1,4 +1,4 @@
-# AI 面试通 (Interview Master)
+# 面试通 (Interview Master)
 
 面向 AI 方向的面试题库平台，已收录 **248 道**面试真题（14 家公司 + 通用知识）。
 

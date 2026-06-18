@@ -28,7 +28,7 @@ from app.core.interview_workflow import (
 )
 from app.core import database as db
 
-app = FastAPI(title="Agent 面试通 API", version="0.1.0")
+app = FastAPI(title="面试通 API", version="0.1.0")
 
 # 面试会话状态（临时，会话结束即丢弃）
 sessions: dict[str, InterviewState] = {}

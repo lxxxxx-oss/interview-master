@@ -48,7 +48,7 @@ export default function AppLayout() {
             style={{ fontSize: 24, color: '#1677ff' }}
           />
           <span className="text-lg font-bold text-gray-900">
-            AI 面试通
+            面试通
           </span>
         </div>
 
