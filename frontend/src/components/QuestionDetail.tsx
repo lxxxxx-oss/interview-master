@@ -159,6 +159,7 @@ export default function QuestionDetailPage() {
           <span className="text-xs text-gray-400">
             {q.source === 'local' ? '📝 收录' : q.source === 'hub' ? '📋 Hub' : '🌐 牛客'}
           </span>
+        </div>
         <h1 className="text-xl md:text-2xl font-semibold text-gray-900 leading-relaxed">
           {q.title}
         </h1>
