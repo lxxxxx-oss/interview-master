@@ -19,7 +19,7 @@ export default function QuestionGrid() {
   const totalRef = useRef(filteredQuestions.length)
   const loadingMoreRef = useRef(false)
 
-  // 用 ref 存储最新的 hasMore / loading，避免 onChange 闭包过期
+  // 用 ref 存储最新的 hasMore / loading，避免 scroll 事件闭包过期
   const hasMoreRef = useRef(hasMore)
   hasMoreRef.current = hasMore
   const loadingRef = useRef(loading)
@@ -38,19 +38,25 @@ export default function QuestionGrid() {
     getScrollElement: () => document.documentElement,
     estimateSize: () => CARD_HEIGHT,
     overscan: 3,
-    onChange: () => {
-      if (!hasMoreRef.current || loadingRef.current) return
+  })
+
+  // 独立 scroll 监听 — 不依赖 useVirtualizer.onChange
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!hasMoreRef.current || loadingRef.current || loadingMoreRef.current) return
       const el = document.documentElement
       const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
 
-      if (distanceFromBottom < LOAD_MORE_THRESHOLD && !loadingMoreRef.current) {
+      if (distanceFromBottom < LOAD_MORE_THRESHOLD) {
         loadingMoreRef.current = true
         loadMore().finally(() => {
           loadingMoreRef.current = false
         })
       }
-    },
-  })
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [loadMore])
 
   // 数据量变化时强制重新测量
   useEffect(() => {
