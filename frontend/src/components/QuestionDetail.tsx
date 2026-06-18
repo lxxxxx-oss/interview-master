@@ -11,6 +11,7 @@ import {
   EyeOutlined,
   LinkOutlined,
   ArrowLeftOutlined,
+  ArrowRightOutlined,
   GithubOutlined,
   CaretRightOutlined,
   CheckCircleOutlined,
@@ -44,7 +45,18 @@ export default function QuestionDetailPage() {
     toggleAnswer,
     questionStates,
     setQuestionState,
+    questions,
   } = useAppStore()
+
+  // 计算上一题/下一题 ID（基于当前筛选后的列表）
+  const currentIndex = questions.findIndex((q) => q.id === Number(id))
+  const prevId = currentIndex > 0 ? questions[currentIndex - 1].id : null
+  const nextId = currentIndex < questions.length - 1 ? questions[currentIndex + 1].id : null
+
+  const navigateToQuestion = (qid: number) => {
+    navigate(`/question/${qid}`)
+    fetchQuestionDetail(qid)
+  }
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -153,14 +165,38 @@ export default function QuestionDetailPage() {
 
   return (
     <div className="max-w-4xl mx-auto pb-20">
-      {/* ─── 返回按钮 ───────────────────────── */}
-      <button
-        onClick={() => navigate('/')}
-        className="flex items-center gap-1 text-gray-500 hover:text-blue-500
-                   transition-colors mb-6 bg-transparent border-0 cursor-pointer"
-      >
-        <ArrowLeftOutlined /> 返回题库
-      </button>
+      {/* ─── 返回 + 上下翻题 ────────────────── */}
+      <div className="flex items-center justify-between mb-6">
+        <button
+          onClick={() => navigate('/')}
+          className="flex items-center gap-1 text-gray-500 hover:text-blue-500
+                     transition-colors bg-transparent border-0 cursor-pointer"
+        >
+          <ArrowLeftOutlined /> 返回题库
+        </button>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => prevId && navigateToQuestion(prevId)}
+            disabled={!prevId}
+            className={`flex items-center gap-1 text-sm transition-colors bg-transparent border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer
+              ${prevId ? 'text-gray-600 hover:text-blue-500 hover:border-blue-300' : 'text-gray-300 cursor-not-allowed border-gray-100'}`}
+          >
+            <ArrowLeftOutlined /> 上一题
+          </button>
+          <span className="text-xs text-gray-400">
+            {currentIndex + 1} / {questions.length}
+          </span>
+          <button
+            onClick={() => nextId && navigateToQuestion(nextId)}
+            disabled={!nextId}
+            className={`flex items-center gap-1 text-sm transition-colors bg-transparent border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer
+              ${nextId ? 'text-gray-600 hover:text-blue-500 hover:border-blue-300' : 'text-gray-300 cursor-not-allowed border-gray-100'}`}
+          >
+            下一题 <ArrowRightOutlined />
+          </button>
+        </div>
+      </div>
 
       {/* ─── 题目头部 ───────────────────────── */}
       <Card className="mb-6 rounded-xl shadow-sm">
