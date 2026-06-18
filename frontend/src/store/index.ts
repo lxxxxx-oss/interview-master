@@ -13,12 +13,14 @@ interface AppStore {
   setFilters: (f: Partial<Filters>) => void
   filterOptions: FilterOptions
 
-  // ─── 题目列表 ─────────────────────────────
+  // ─── 题目列表（无限滚动） ─────────────────
   questions: Question[]
   filteredQuestions: Question[]
   pagination: Pagination
   loading: boolean
-  fetchQuestions: () => Promise<void>
+  hasMore: boolean
+  fetchQuestions: (reset?: boolean) => Promise<void>
+  loadMore: () => Promise<void>
   applyFilters: () => Promise<void>
   setPage: (page: number) => void
 
@@ -42,7 +44,7 @@ interface AppStore {
   deleteQuestion: (id: number) => Promise<boolean>
 }
 
-const PAGE_SIZE = 12
+const FETCH_SIZE = 50  // 每次从后端拉取的题目数
 
 export const useAppStore = create<AppStore>((set, get) => ({
   // ─── 筛选状态 ─────────────────────────────
@@ -52,13 +54,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
   filterOptions: { difficulties: [], companies: [], categories: [] },
 
-  // ─── 题目列表 ─────────────────────────────
+  // ─── 题目列表（无限滚动） ─────────────────
   questions: [],
   filteredQuestions: [],
-  pagination: { page: 1, pageSize: PAGE_SIZE, total: 0 },
+  pagination: { page: 1, pageSize: FETCH_SIZE, total: 0 },
   loading: false,
+  hasMore: true,
 
-  fetchQuestions: async () => {
+  fetchQuestions: async (_reset = true) => {
     set({ loading: true })
     try {
       const { filters } = get()
@@ -68,61 +71,110 @@ export const useAppStore = create<AppStore>((set, get) => ({
       if (filters.category) params.set('category', filters.category)
       if (filters.search) params.set('search', filters.search)
       params.set('page', '1')
-      params.set('page_size', '50') // 分批加载，减少首屏白屏时间
+      params.set('page_size', String(FETCH_SIZE))
 
       const res = await fetch(`${API_BASE}/questions?${params}`)
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
 
       const questions: Question[] = data.questions.map((q: any) => ({
-        id: q.id,
-        title: q.title,
-        difficulty: q.difficulty,
-        company: q.company,
-        category: q.category,
-        hint: q.hint,
-        answer: q.answer,
-        source: q.source,
-        sourceUrl: q.source_url,
+        id: q.id, title: q.title, difficulty: q.difficulty,
+        company: q.company, category: q.category, hint: q.hint,
+        answer: q.answer, source: q.source, sourceUrl: q.source_url,
         createdAt: q.created_at,
       }))
 
       set({
         questions,
         filteredQuestions: questions,
-        pagination: { page: 1, pageSize: PAGE_SIZE, total: questions.length },
+        pagination: { page: 1, pageSize: FETCH_SIZE, total: data.total },
+        hasMore: questions.length < data.total,
       })
     } catch (e: any) {
       console.error('fetchQuestions failed:', e)
-      set({ questions: [], filteredQuestions: [] })
+      set({ questions: [], filteredQuestions: [], hasMore: false })
+    } finally {
+      set({ loading: false })
+    }
+  },
+
+  loadMore: async () => {
+    const { hasMore, loading, pagination, questions, filters } = get()
+    if (!hasMore || loading) return
+
+    const nextPage = Math.floor(questions.length / FETCH_SIZE) + 1
+    set({ loading: true })
+
+    try {
+      const params = new URLSearchParams()
+      if (filters.difficulty) params.set('difficulty', filters.difficulty)
+      if (filters.company) params.set('company', filters.company)
+      if (filters.category) params.set('category', filters.category)
+      if (filters.search) params.set('search', filters.search)
+      params.set('page', String(nextPage))
+      params.set('page_size', String(FETCH_SIZE))
+
+      const res = await fetch(`${API_BASE}/questions?${params}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+
+      const newQuestions: Question[] = data.questions.map((q: any) => ({
+        id: q.id, title: q.title, difficulty: q.difficulty,
+        company: q.company, category: q.category, hint: q.hint,
+        answer: q.answer, source: q.source, sourceUrl: q.source_url,
+        createdAt: q.created_at,
+      }))
+
+      const merged = [...questions, ...newQuestions]
+      set({
+        questions: merged,
+        filteredQuestions: merged,
+        pagination: { ...pagination, page: nextPage, total: data.total },
+        hasMore: merged.length < data.total,
+      })
+    } catch (e: any) {
+      console.error('loadMore failed:', e)
     } finally {
       set({ loading: false })
     }
   },
 
   applyFilters: async () => {
-    const { filters, questions } = get()
-    let result = [...questions]
+    // 筛选条件变化时重新从后端首页拉取
+    const { filters } = get()
+    set({ loading: true })
+    try {
+      const params = new URLSearchParams()
+      if (filters.difficulty) params.set('difficulty', filters.difficulty)
+      if (filters.company) params.set('company', filters.company)
+      if (filters.category) params.set('category', filters.category)
+      if (filters.search) params.set('search', filters.search)
+      params.set('page', '1')
+      params.set('page_size', String(FETCH_SIZE))
 
-    if (filters.difficulty)
-      result = result.filter((q) => q.difficulty === filters.difficulty)
-    if (filters.company)
-      result = result.filter((q) => q.company === filters.company)
-    if (filters.category)
-      result = result.filter((q) => q.category === filters.category)
-    if (filters.search) {
-      const s = filters.search.toLowerCase()
-      result = result.filter(
-        (q) =>
-          q.title.toLowerCase().includes(s) ||
-          (q.answer && q.answer.toLowerCase().includes(s)),
-      )
+      const res = await fetch(`${API_BASE}/questions?${params}`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+
+      const questions: Question[] = data.questions.map((q: any) => ({
+        id: q.id, title: q.title, difficulty: q.difficulty,
+        company: q.company, category: q.category, hint: q.hint,
+        answer: q.answer, source: q.source, sourceUrl: q.source_url,
+        createdAt: q.created_at,
+      }))
+
+      set({
+        questions,
+        filteredQuestions: questions,
+        pagination: { page: 1, pageSize: FETCH_SIZE, total: data.total },
+        hasMore: questions.length < data.total,
+      })
+    } catch (e: any) {
+      console.error('applyFilters failed:', e)
+      set({ questions: [], filteredQuestions: [], hasMore: false })
+    } finally {
+      set({ loading: false })
     }
-
-    set({
-      filteredQuestions: result,
-      pagination: { page: 1, pageSize: PAGE_SIZE, total: result.length },
-    })
   },
 
   setPage: (page) => {
