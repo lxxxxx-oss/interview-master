@@ -18,6 +18,7 @@ import {
   CheckCircleFilled,
   StarOutlined,
   StarFilled,
+  ShakeOutlined,
 } from '@ant-design/icons'
 import { Tooltip } from 'antd'
 import ReactMarkdown from 'react-markdown'
@@ -58,6 +59,16 @@ export default function QuestionDetailPage() {
   const navigateToQuestion = (qid: number) => {
     navigate(`/question/${qid}`)
     fetchQuestionDetail(qid)
+  }
+
+  const goToRandom = () => {
+    if (filteredQuestions.length === 0) return
+    const currentIdx = filteredQuestions.findIndex((q) => q.id === Number(id))
+    let randomIdx: number
+    do {
+      randomIdx = Math.floor(Math.random() * filteredQuestions.length)
+    } while (filteredQuestions.length > 1 && randomIdx === currentIdx)
+    navigateToQuestion(filteredQuestions[randomIdx].id)
   }
 
   const [loading, setLoading] = useState(true)
@@ -216,6 +227,14 @@ export default function QuestionDetailPage() {
         <span className="text-xs text-gray-400">
           {currentIndex >= 0 ? currentIndex + 1 : '?'} / {totalFiltered}
         </span>
+
+        <button
+          onClick={goToRandom}
+          title="随机一题"
+          className="flex items-center gap-1 text-sm text-gray-400 hover:text-[#1677ff] transition-colors bg-transparent border-0 cursor-pointer"
+        >
+          <ShakeOutlined /> 随机
+        </button>
       </div>
 
       {/* ─── 题目头部 ───────────────────────── */}
