@@ -40,6 +40,7 @@ interface AppStore {
   fetchQuestions: (reset?: boolean) => Promise<void>
   loadMore: () => Promise<void>
   applyFilters: () => Promise<void>
+  applyStateFilterLocal: () => void
   setPage: (page: number) => void
 
   // ─── 题目详情 ─────────────────────────────
@@ -229,11 +230,16 @@ export const useAppStore = create<AppStore>((set, get) => ({
     }
   },
 
+  // 学习状态变更时不触发服务器请求，纯客户端过滤
+  applyStateFilterLocal: () => {
+    const { questions, filters, questionStates } = get()
+    const filtered = applyStateFilter(questions, filters.state, questionStates)
+    set({ filteredQuestions: filtered })
+  },
+
   setPage: (page) => {
     set((s) => ({ pagination: { ...s.pagination, page } }))
   },
-
-  // ─── 题目详情 ─────────────────────────────
   currentQuestion: null,
   revealHint: false,
   revealAnswer: false,

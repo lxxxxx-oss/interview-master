@@ -18,7 +18,7 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 const DEBOUNCE_MS = 300
 
 export default function FilterBar() {
-  const { filters, setFilters, filterOptions, applyFilters } = useAppStore()
+  const { filters, setFilters, filterOptions, applyFilters, applyStateFilterLocal } = useAppStore()
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // 组件卸载时清理定时器
@@ -101,9 +101,10 @@ export default function FilterBar() {
           placeholder="学习状态"
           value={filters.state || 'unlearned'}
           onChange={(v) => {
-            if (v === 'unlearned') handleSelectChange('state', '')
-            else if (v === 'all') handleSelectChange('state', 'all')
-            else handleSelectChange('state', v)
+            const stateVal = v === 'unlearned' ? '' : v
+            setFilters({ state: stateVal })
+            // 学习状态切换走纯客户端过滤，不请求服务器
+            applyStateFilterLocal()
           }}
           style={{ width: 140 }}
           size="small"

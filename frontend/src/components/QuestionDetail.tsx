@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Tag, Divider, Card, Spin, Alert, Empty, Collapse } from 'antd'
+import { Button, Tag, Divider, Card, Alert, Empty, Collapse } from 'antd'
 import {
   BulbOutlined,
   EyeOutlined,
@@ -78,8 +78,40 @@ export default function QuestionDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-40">
-        <Spin size="large" tip="Loading…" />
+      <div className="max-w-4xl mx-auto pb-20">
+        {/* 顶部导航骨架 */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="h-5 w-20 bg-gray-100 rounded animate-pulse" />
+          <div className="h-4 w-12 bg-gray-100 rounded animate-pulse" />
+        </div>
+        {/* 标题卡片骨架 */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="h-6 w-12 bg-gray-100 rounded animate-pulse" />
+            <div className="h-6 w-16 bg-gray-100 rounded animate-pulse" />
+            <div className="h-6 w-20 bg-gray-100 rounded animate-pulse" />
+          </div>
+          <div className="h-7 bg-gray-100 rounded animate-pulse w-2/3 mb-4" />
+          <div className="h-7 bg-gray-100 rounded animate-pulse w-1/2" />
+        </div>
+        {/* 折叠面板骨架 */}
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-5 h-5 rounded bg-gray-100 animate-pulse" />
+            <div className="h-5 bg-gray-100 rounded animate-pulse w-24" />
+          </div>
+          <div className="h-4 bg-gray-50 rounded animate-pulse w-full mb-2" />
+          <div className="h-4 bg-gray-50 rounded animate-pulse w-3/4" />
+        </div>
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-5 h-5 rounded bg-gray-100 animate-pulse" />
+            <div className="h-5 bg-gray-100 rounded animate-pulse w-24" />
+          </div>
+          <div className="h-4 bg-gray-50 rounded animate-pulse w-full mb-2" />
+          <div className="h-4 bg-gray-50 rounded animate-pulse w-5/6 mb-2" />
+          <div className="h-4 bg-gray-50 rounded animate-pulse w-2/3" />
+        </div>
       </div>
     )
   }
