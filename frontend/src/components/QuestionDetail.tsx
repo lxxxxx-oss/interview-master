@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Button, Tag, Divider, Card, Spin, Alert, Empty, Collapse, Modal, Input, Select, Form, Popconfirm, message } from 'antd'
+import { Button, Tag, Divider, Card, Spin, Alert, Empty, Collapse } from 'antd'
 import {
   BulbOutlined,
   EyeOutlined,
@@ -13,8 +13,6 @@ import {
   ArrowLeftOutlined,
   GithubOutlined,
   CaretRightOutlined,
-  EditOutlined,
-  DeleteOutlined,
 } from '@ant-design/icons'
 import ReactMarkdown from 'react-markdown'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -37,61 +35,12 @@ export default function QuestionDetailPage() {
     revealHint,
     revealAnswer,
     fetchQuestionDetail,
-    updateQuestion,
-    deleteQuestion,
     toggleHint,
     toggleAnswer,
   } = useAppStore()
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-
-  // ─── 编辑弹窗状态 ─────────────────────────
-  const [editOpen, setEditOpen] = useState(false)
-  const [editForm] = Form.useForm()
-  const [saving, setSaving] = useState(false)
-
-  // ─── 编辑/删除操作 ───────────────────────
-  const handleEdit = () => {
-    const q = currentQuestion
-    if (!q) return
-    editForm.setFieldsValue({
-      title: q.title,
-      difficulty: q.difficulty,
-      company: q.company || '',
-      category: q.category,
-      hint: q.hint,
-      answer: q.answer,
-    })
-    setEditOpen(true)
-  }
-
-  const handleEditSave = async () => {
-    if (!currentQuestion) return
-    setSaving(true)
-    try {
-      const values = await editForm.validateFields()
-      await updateQuestion(currentQuestion.id, values)
-      message.success('Updated successfully')
-      setEditOpen(false)
-    } catch (e: any) {
-      if (e.message) message.error(e.message)
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const handleDelete = async () => {
-    if (!currentQuestion) return
-    const qid = currentQuestion.id
-    try {
-      navigate('/', { replace: true })
-      await deleteQuestion(qid)
-      message.success('Deleted')
-    } catch (e: any) {
-      message.error(e.message || 'Delete failed')
-    }
-  }
 
   useEffect(() => {
     if (!id) return
@@ -210,35 +159,6 @@ export default function QuestionDetailPage() {
           <span className="text-xs text-gray-400">
             {q.source === 'local' ? '📝 收录' : q.source === 'hub' ? '📋 Hub' : '🌐 牛客'}
           </span>
-          {/* ─── 管理操作按钮 ──────── */}
-          <div className="ml-auto flex items-center gap-2">
-            <Button
-              size="small"
-              icon={<EditOutlined />}
-              onClick={handleEdit}
-              className="text-gray-400 hover:text-blue-500"
-            >
-              Edit
-            </Button>
-            <Popconfirm
-              title="Delete this question?"
-              description="This will also remove all linked code references."
-              onConfirm={handleDelete}
-              okText="Delete"
-              okType="danger"
-              cancelText="Cancel"
-            >
-              <Button
-                size="small"
-                danger
-                icon={<DeleteOutlined />}
-                className="text-gray-400 hover:text-red-500"
-              >
-                Delete
-              </Button>
-            </Popconfirm>
-          </div>
-        </div>
         <h1 className="text-xl md:text-2xl font-semibold text-gray-900 leading-relaxed">
           {q.title}
         </h1>
@@ -338,60 +258,6 @@ export default function QuestionDetailPage() {
       {revealAnswer && q.references.length === 0 && (
         <Empty description="No linked references" className="py-8" />
       )}
-
-      {/* ═══ Admin Modals ══════════════════════════════════════════════════════════ */}
-
-      {/* Edit Question Modal */}
-      <Modal
-        title="Edit Question"
-        open={editOpen}
-        onOk={handleEditSave}
-        onCancel={() => setEditOpen(false)}
-        okText="Save"
-        confirmLoading={saving}
-        width={720}
-        destroyOnClose
-      >
-        <Form form={editForm} layout="vertical" className="mt-4">
-          <Form.Item name="title" label="Title" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <div className="grid grid-cols-3 gap-4">
-            <Form.Item name="difficulty" label="Difficulty" rules={[{ required: true }]}>
-              <Select
-                options={[
-                  { value: 'easy', label: 'Easy' },
-                  { value: 'medium', label: 'Medium' },
-                  { value: 'hard', label: 'Hard' },
-                ]}
-              />
-            </Form.Item>
-            <Form.Item name="company" label="Company">
-              <Input placeholder="e.g. ByteDance" />
-            </Form.Item>
-            <Form.Item name="category" label="Category" rules={[{ required: true }]}>
-              <Select
-                options={[
-                  { value: 'Agent基础', label: 'Agent基础' },
-                  { value: 'RAG', label: 'RAG' },
-                  { value: 'MCP协议', label: 'MCP协议' },
-                  { value: 'Function Calling', label: 'Function Calling' },
-                  { value: 'Prompt Engineering', label: 'Prompt Engineering' },
-                  { value: '记忆机制', label: '记忆机制' },
-                  { value: '向量检索', label: '向量检索' },
-                  { value: '模型架构', label: '模型架构' },
-                ]}
-              />
-            </Form.Item>
-          </div>
-          <Form.Item name="hint" label="Hint">
-            <Input.TextArea rows={3} placeholder="解题提示…" />
-          </Form.Item>
-          <Form.Item name="answer" label="Answer (Markdown)" rules={[{ required: true }]}>
-            <Input.TextArea rows={12} placeholder="Markdown 格式的标准答案…" />
-          </Form.Item>
-        </Form>
-      </Modal>
     </div>
   )
 }

@@ -3,15 +3,12 @@
 // ============================================================
 
 import { useState, useRef } from 'react'
-import { Card, Tag, Popover, Popconfirm, message } from 'antd'
+import { Card, Tag, Popover } from 'antd'
 import {
   BulbOutlined,
-  DeleteOutlined,
-  EditOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import type { Question } from '../types'
-import { useAppStore } from '../store'
 
 const DIFFICULTY_MAP: Record<string, { label: string; color: string }> = {
   easy: { label: 'Easy', color: 'green' },
@@ -38,21 +35,11 @@ const SOURCE_ICON: Record<string, string> = {
 
 export default function Flashcard({ question }: { question: Question }) {
   const navigate = useNavigate()
-  const { deleteQuestion } = useAppStore()
   const diff = DIFFICULTY_MAP[question.difficulty] || DIFFICULTY_MAP.easy
   const [hover, setHover] = useState(false)
   const hintRef = useRef<HTMLButtonElement>(null)
 
   const handleDetail = () => navigate(`/question/${question.id}`)
-
-  const handleDeleteConfirm = async () => {
-    try {
-      await deleteQuestion(question.id)
-      message.success('Deleted')
-    } catch (err: any) {
-      message.error(err.message || 'Delete failed')
-    }
-  }
 
   return (
     <Card
@@ -93,30 +80,6 @@ export default function Flashcard({ question }: { question: Question }) {
         <span>{SOURCE_ICON[question.source] || '📝'} {question.source === 'local' ? '收录' : question.source === 'hub' ? 'Hub' : '牛客'}</span>
 
         <div className="flex items-center gap-2">
-          {/* Admin — visible on hover */}
-          <span className={`inline-flex items-center gap-1 transition-opacity duration-200 ${hover ? 'opacity-100' : 'opacity-0'}`}>
-            <button
-              className="text-gray-400 hover:text-blue-400 transition-colors cursor-pointer border-0 bg-transparent p-0"
-              onClick={(e) => { e.stopPropagation(); navigate(`/question/${question.id}`) }}
-            >
-              <EditOutlined />
-            </button>
-            <Popconfirm
-              title="Delete?"
-              onConfirm={handleDeleteConfirm}
-              okText="Delete"
-              okType="danger"
-              cancelText="Cancel"
-            >
-              <button
-                className="text-gray-400 hover:text-red-400 transition-colors cursor-pointer border-0 bg-transparent p-0"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <DeleteOutlined />
-              </button>
-            </Popconfirm>
-          </span>
-
           {/* Hint button — pops up outside the card on hover */}
           <Popover
             trigger="click"
