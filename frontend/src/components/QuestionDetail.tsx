@@ -401,7 +401,7 @@ export default function QuestionDetailPage() {
         disabled={!prevId}
         title={prevId ? '上一题' : '已是第一题'}
         className={`fixed left-0 top-1/2 -translate-y-1/2 z-40
-          flex items-center gap-2 pl-3 pr-5 py-3
+          hidden sm:flex items-center gap-2 pl-3 pr-5 py-3
           bg-[#1677ff] shadow-lg shadow-blue-500/30
           rounded-r-2xl transition-all duration-300 cursor-pointer border-0
           ${prevId
@@ -418,7 +418,7 @@ export default function QuestionDetailPage() {
         disabled={!nextId}
         title={nextId ? '下一题' : '已是最后一题'}
         className={`fixed right-0 top-1/2 -translate-y-1/2 z-40
-          flex items-center gap-2 pl-5 pr-3 py-3
+          hidden sm:flex items-center gap-2 pl-5 pr-3 py-3
           bg-[#1677ff] shadow-lg shadow-blue-500/30
           rounded-l-2xl transition-all duration-300 cursor-pointer border-0
           ${nextId
@@ -429,6 +429,41 @@ export default function QuestionDetailPage() {
         <span className="text-sm font-semibold tracking-wide">下一题</span>
         <ArrowRightOutlined className="text-lg" />
       </button>
+
+      {/* ─── 移动端底部导航栏 ────────────────── */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40
+        flex items-center justify-between px-4 py-3
+        bg-white/95 backdrop-blur-sm border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+        <button
+          onClick={() => prevId && navigateToQuestion(prevId)}
+          disabled={!prevId}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors border-0 cursor-pointer
+            ${prevId
+              ? 'bg-gray-50 text-gray-700 active:bg-blue-50 active:text-[#1677ff]'
+              : 'text-gray-300 cursor-not-allowed bg-transparent opacity-50'
+            }`}
+        >
+          <ArrowLeftOutlined /> 上一题
+        </button>
+        <button
+          onClick={goToRandom}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium
+            bg-[#1677ff]/10 text-[#1677ff] active:bg-[#1677ff]/20 transition-colors border-0 cursor-pointer"
+        >
+          <ShakeOutlined /> 随机
+        </button>
+        <button
+          onClick={() => nextId && navigateToQuestion(nextId)}
+          disabled={!nextId}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-colors border-0 cursor-pointer
+            ${nextId
+              ? 'bg-gray-50 text-gray-700 active:bg-blue-50 active:text-[#1677ff]'
+              : 'text-gray-300 cursor-not-allowed bg-transparent opacity-50'
+            }`}
+        >
+          下一题 <ArrowRightOutlined />
+        </button>
+      </div>
     </div>
   )
 }
