@@ -71,6 +71,23 @@ export default function QuestionDetailPage() {
     navigateToQuestion(filteredQuestions[randomIdx].id)
   }
 
+  // 键盘快捷键：← → 翻题
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 不拦截输入框内的按键
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.key === 'ArrowLeft' && prevId != null) {
+        e.preventDefault()
+        navigateToQuestion(prevId)
+      } else if (e.key === 'ArrowRight' && nextId != null) {
+        e.preventDefault()
+        navigateToQuestion(nextId)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [prevId, nextId])
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
