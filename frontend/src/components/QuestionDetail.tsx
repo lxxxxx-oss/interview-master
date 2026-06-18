@@ -194,6 +194,9 @@ export default function QuestionDetailPage() {
           >
             📚 来自知识库的相关文档
           </Divider>
+          <p className="text-xs text-gray-400 mb-4 leading-relaxed">
+            以下引用仅提供 GitHub 文件链接跳转，方便快速查阅相关文档片段，不复制或分发任何仓库内容。如涉及侵权请联系删除。
+          </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {q.references.map((ref) => (
               <Card
