@@ -91,7 +91,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
         next[id] = state
       }
       localStorage.setItem(LS_KEY, JSON.stringify(next))
-      return { questionStates: next }
+
+      // 立即重新过滤列表，让卡片状态即时反映
+      const filtered = applyStateFilter(s.questions, s.filters.state, next)
+
+      return { questionStates: next, filteredQuestions: filtered }
     })
   },
 
