@@ -1,22 +1,12 @@
 // ============================================================
-// Agent 面试通 — TypeScript 类型定义
+// AI 面试通 — TypeScript 类型定义
 // ============================================================
 
 /** 难度等级 */
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
-/** 题目标签 */
-export type QuestionCategory =
-  | 'Agent基础'
-  | 'RAG'
-  | 'MCP协议'
-  | 'Function Calling'
-  | 'Prompt Engineering'
-  | '记忆机制'
-  | '向量检索'
-  | 'LangChain'
-  | '模型架构'
-  | '项目经验'
+/** 题目标签（可扩展，后续新增方向直接追加） */
+export type QuestionCategory = string
 
 /** 面试题 */
 export interface Question {

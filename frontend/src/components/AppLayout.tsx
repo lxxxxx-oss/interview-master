@@ -13,7 +13,7 @@ export default function AppLayout() {
   const location = useLocation()
 
   const navItems = [
-    { key: '/', icon: <HomeOutlined />, label: '面经题库' },
+    { key: '/', icon: <HomeOutlined />, label: '面试题库' },
     { key: '/interview', icon: <RobotOutlined />, label: '模拟面试' },
     { key: '/admin', icon: <SettingOutlined />, label: '管理' },
   ]
@@ -47,7 +47,7 @@ export default function AppLayout() {
             style={{ fontSize: 24, color: '#1677ff' }}
           />
           <span className="text-lg font-bold text-gray-900">
-            Agent 面试通
+            AI 面试通
           </span>
         </div>
 

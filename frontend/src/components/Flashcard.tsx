@@ -90,7 +90,7 @@ export default function Flashcard({ question }: { question: Question }) {
 
       {/* Bottom: source + admin actions + hint button that floats up on hover */}
       <div className="flex items-center justify-between text-xs text-gray-400 relative">
-        <span>{SOURCE_ICON[question.source] || '📝'} {question.source === 'local' ? '面经' : question.source === 'hub' ? 'Hub' : '牛客'}</span>
+        <span>{SOURCE_ICON[question.source] || '📝'} {question.source === 'local' ? '收录' : question.source === 'hub' ? 'Hub' : '牛客'}</span>
 
         <div className="flex items-center gap-2">
           {/* Admin — visible on hover */}

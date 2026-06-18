@@ -209,7 +209,7 @@ export default function QuestionDetailPage() {
           )}
           <Tag className="text-sm px-3 py-0.5">{q.category}</Tag>
           <span className="text-xs text-gray-400">
-            {q.source === 'local' ? '📝 面经收录' : '🌐 牛客网'}
+            {q.source === 'local' ? '📝 收录' : q.source === 'hub' ? '📋 Hub' : '🌐 牛客'}
           </span>
           {/* ─── 管理操作按钮 ──────── */}
           <div className="ml-auto flex items-center gap-2">
