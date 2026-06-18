@@ -175,27 +175,9 @@ export default function QuestionDetailPage() {
           <ArrowLeftOutlined /> 返回题库
         </button>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => prevId && navigateToQuestion(prevId)}
-            disabled={!prevId}
-            className={`flex items-center gap-1 text-sm transition-colors bg-transparent border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer
-              ${prevId ? 'text-gray-600 hover:text-blue-500 hover:border-blue-300' : 'text-gray-300 cursor-not-allowed border-gray-100'}`}
-          >
-            <ArrowLeftOutlined /> 上一题
-          </button>
-          <span className="text-xs text-gray-400">
-            {currentIndex + 1} / {questions.length}
-          </span>
-          <button
-            onClick={() => nextId && navigateToQuestion(nextId)}
-            disabled={!nextId}
-            className={`flex items-center gap-1 text-sm transition-colors bg-transparent border border-gray-200 rounded-lg px-3 py-1.5 cursor-pointer
-              ${nextId ? 'text-gray-600 hover:text-blue-500 hover:border-blue-300' : 'text-gray-300 cursor-not-allowed border-gray-100'}`}
-          >
-            下一题 <ArrowRightOutlined />
-          </button>
-        </div>
+        <span className="text-xs text-gray-400">
+          {currentIndex + 1} / {questions.length}
+        </span>
       </div>
 
       {/* ─── 题目头部 ───────────────────────── */}
@@ -338,6 +320,39 @@ export default function QuestionDetailPage() {
       {revealAnswer && q.references.length === 0 && (
         <Empty description="No linked references" className="py-8" />
       )}
+
+      {/* ─── 左右浮动导航 ────────────────── */}
+      <button
+        onClick={() => prevId && navigateToQuestion(prevId)}
+        disabled={!prevId}
+        title={prevId ? '上一题' : '已是第一题'}
+        className={`fixed left-4 top-1/2 -translate-y-1/2 z-40
+          w-14 h-14 flex items-center justify-center gap-1.5
+          bg-white/90 backdrop-blur-sm shadow-lg rounded-full
+          border transition-all duration-200 cursor-pointer
+          ${prevId
+            ? 'border-gray-200 text-gray-600 hover:text-blue-500 hover:border-blue-300 hover:shadow-xl hover:scale-110'
+            : 'border-gray-100 text-gray-300 cursor-not-allowed opacity-0 pointer-events-none'
+          }`}
+      >
+        <ArrowLeftOutlined className="text-xl" />
+      </button>
+
+      <button
+        onClick={() => nextId && navigateToQuestion(nextId)}
+        disabled={!nextId}
+        title={nextId ? '下一题' : '已是最后一题'}
+        className={`fixed right-4 top-1/2 -translate-y-1/2 z-40
+          w-14 h-14 flex items-center justify-center gap-1.5
+          bg-white/90 backdrop-blur-sm shadow-lg rounded-full
+          border transition-all duration-200 cursor-pointer
+          ${nextId
+            ? 'border-gray-200 text-gray-600 hover:text-blue-500 hover:border-blue-300 hover:shadow-xl hover:scale-110'
+            : 'border-gray-100 text-gray-300 cursor-not-allowed opacity-0 pointer-events-none'
+          }`}
+      >
+        <ArrowRightOutlined className="text-xl" />
+      </button>
     </div>
   )
 }
