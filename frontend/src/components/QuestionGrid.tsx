@@ -19,6 +19,12 @@ export default function QuestionGrid() {
   const totalRef = useRef(filteredQuestions.length)
   const loadingMoreRef = useRef(false)
 
+  // 用 ref 存储最新的 hasMore / loading，避免 onChange 闭包过期
+  const hasMoreRef = useRef(hasMore)
+  hasMoreRef.current = hasMore
+  const loadingRef = useRef(loading)
+  loadingRef.current = loading
+
   const getRowItems = useCallback(
     (rowIndex: number) => {
       const start = rowIndex * COLUMNS
@@ -32,16 +38,16 @@ export default function QuestionGrid() {
     getScrollElement: () => document.documentElement,
     estimateSize: () => CARD_HEIGHT,
     overscan: 3,
-    // 滚动时检测是否需要加载更多
-    onChange: (instance) => {
-      if (!hasMore || loading) return
-      const el = instance.scrollElement
-      if (!el) return
+    onChange: () => {
+      if (!hasMoreRef.current || loadingRef.current) return
+      const el = document.documentElement
       const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
 
       if (distanceFromBottom < LOAD_MORE_THRESHOLD && !loadingMoreRef.current) {
         loadingMoreRef.current = true
-        loadMore().finally(() => { loadingMoreRef.current = false })
+        loadMore().finally(() => {
+          loadingMoreRef.current = false
+        })
       }
     },
   })
@@ -49,8 +55,13 @@ export default function QuestionGrid() {
   // 数据量变化时强制重新测量
   useEffect(() => {
     if (filteredQuestions.length !== totalRef.current) {
+      const wasFiltered = totalRef.current > 0 && filteredQuestions.length <= 50 && filteredQuestions.length < totalRef.current
       totalRef.current = filteredQuestions.length
       virtualizer.measure()
+      // 如果是筛选导致数据量骤降（从多页变为少于一页），滚回顶部
+      if (wasFiltered) {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      }
     }
   }, [filteredQuestions.length, virtualizer])
 

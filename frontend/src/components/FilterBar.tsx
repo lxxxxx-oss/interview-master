@@ -29,8 +29,13 @@ export default function FilterBar() {
   }, [])
 
   const handleSelectChange = (key: string, value: string | undefined) => {
+    // 取消搜索防抖定时器，避免覆盖本次筛选
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current)
+      debounceRef.current = null
+    }
     setFilters({ [key]: value || '' })
-    // 下拉选择即时触发，无需防抖
+    // 下拉选择即时触发
     applyFilters()
   }
 

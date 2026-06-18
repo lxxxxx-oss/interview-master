@@ -122,10 +122,16 @@ def list_questions(
     count_sql = f"SELECT COUNT(*) FROM questions {where}"
     total = conn.execute(count_sql, params).fetchone()[0]
 
-    # 分页数据
+    # 分页数据 — 有搜索词时按相关性排序（标题命中 > 答案命中），否则按 id 倒序
     offset = (page - 1) * page_size
-    data_sql = f"SELECT * FROM questions {where} ORDER BY id DESC LIMIT ? OFFSET ?"
-    rows = conn.execute(data_sql, params + [page_size, offset]).fetchall()
+    if search:
+        order = "ORDER BY (CASE WHEN title LIKE ? THEN 2 WHEN answer LIKE ? THEN 1 ELSE 0 END) DESC, id DESC"
+        order_params = [f"%{search}%", f"%{search}%"]
+    else:
+        order = "ORDER BY id DESC"
+        order_params = []
+    data_sql = f"SELECT * FROM questions {where} {order} LIMIT ? OFFSET ?"
+    rows = conn.execute(data_sql, params + order_params + [page_size, offset]).fetchall()
 
     conn.close()
     return [_row_to_dict(r) for r in rows], total
