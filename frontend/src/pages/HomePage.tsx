@@ -23,7 +23,10 @@ export default function HomePage() {
           📋 面试题库
         </h1>
         <p className="text-gray-500 mt-1">
-         覆盖大厂 Agent / RAG / MCP / LLM 等方向面试真题 — 点击卡片查看提示与答案
+          聚焦 Agent / RAG / MCP / LLM 等方向高频面试真题，点击卡片查看提示与标准答案
+        </p>
+        <p className="text-gray-400 text-xs mt-1">
+          题目来源于网络公开面经，答案由 AI 生成仅供参考，未经严格校验，如有错误欢迎指正。如有侵权请联系删除。
         </p>
       </div>
 

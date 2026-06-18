@@ -27,11 +27,6 @@ const CATEGORY_COLORS: Record<string, string> = {
   '模型架构': '#fa541c',
 }
 
-const SOURCE_ICON: Record<string, string> = {
-  local: '📝',
-  nowcoder: '🌐',
-  hub: '📋',
-}
 
 export default function Flashcard({ question }: { question: Question }) {
   const navigate = useNavigate()
@@ -75,10 +70,8 @@ export default function Flashcard({ question }: { question: Question }) {
         </p>
       </div>
 
-      {/* Bottom: source + admin actions + hint button that floats up on hover */}
-      <div className="flex items-center justify-between text-xs text-gray-400 relative">
-        <span>{SOURCE_ICON[question.source] || '📝'} {question.source === 'local' ? '收录' : question.source === 'hub' ? 'Hub' : '牛客'}</span>
-
+      {/* Bottom: hint button that floats up on hover */}
+      <div className="flex items-center justify-end text-xs text-gray-400 relative">
         <div className="flex items-center gap-2">
           {/* Hint button — pops up outside the card on hover */}
           <Popover
