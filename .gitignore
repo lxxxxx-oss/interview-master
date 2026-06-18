@@ -1,24 +1,17 @@
 # Dependencies
 frontend/node_modules/
-backend/__pycache__/
-backend/app/__pycache__/
-backend/app/api/__pycache__/
-backend/app/core/__pycache__/
-backend/app/scripts/__pycache__/
+**/__pycache__/
 *.pyc
-__pycache__/
 
-# Database (contains real data, don't commit)
+# Database
 backend/data/questions.db
 
 # Build output
 frontend/dist/
 
-# IDE
+# IDE / OS
 .vscode/
 .idea/
-
-# OS
 .DS_Store
 Thumbs.db
 
@@ -26,5 +19,9 @@ Thumbs.db
 .env
 .env.local
 
-# LLM keys (sensitive)
-**/llm_client.py  # might contain keys - handled via env vars
+# Claude harness — local-only config, not for public
+.claude/
+
+# Documentation — internal dev docs, not for public
+docs/
+需求文档.md
