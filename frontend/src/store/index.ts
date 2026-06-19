@@ -275,6 +275,13 @@ export const useAppStore = create<AppStore>((set, get) => ({
           lineRange: ref.line_range,
           codeSnippet: ref.code_snippet,
           description: ref.description,
+          score: ref.score || 0,
+        })),
+        referenceAnchors: (q.referenceAnchors || []).map((a: any) => ({
+          refId: a.refId ?? a.ref_id,
+          score: a.score || 0,
+          snippet: a.snippet || '',
+          position: a.position || 0,
         })),
       }
       set({ currentQuestion: detail })

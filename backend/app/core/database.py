@@ -11,7 +11,7 @@ import sqlite3
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Dict, Tuple
 
 from app.core.config import settings
 
@@ -21,7 +21,7 @@ from app.core.config import settings
 # ============================================================
 
 def get_connection() -> sqlite3.Connection:
-    """获取数据库连接（自动创建 data 目录和表）"""
+    """获取数据库连接（自动创建 data 目录和表，确保 FTS 索引完整）"""
     db_path = Path(settings.sqlite_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -30,6 +30,17 @@ def get_connection() -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")  # 更好的并发读
     conn.execute("PRAGMA foreign_keys=ON")
     _ensure_tables(conn)
+
+    # 首次启用 FTS 时重建索引（检测 questions 表 vs FTS 表行数是否一致）
+    total = conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
+    fts_total = conn.execute("SELECT COUNT(*) FROM questions_fts").fetchone()[0]
+    if total > 0 and fts_total != total:
+        # 用 INSERT ... SELECT 手动灌入全部数据
+        conn.execute(
+            "INSERT INTO questions_fts(rowid, title, answer, hint, category, expected_keywords) "
+            "SELECT id, title, answer, hint, category, expected_keywords FROM questions"
+        )
+
     return conn
 
 
@@ -61,6 +72,7 @@ def _ensure_tables(conn: sqlite3.Connection):
             line_range TEXT NOT NULL DEFAULT 'L1',
             code_snippet TEXT NOT NULL DEFAULT '',
             description TEXT NOT NULL DEFAULT '',
+            score REAL NOT NULL DEFAULT 0,
             FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
         );
 
@@ -79,7 +91,46 @@ def _ensure_tables(conn: sqlite3.Connection):
         CREATE INDEX IF NOT EXISTS idx_questions_category ON questions(category);
         CREATE INDEX IF NOT EXISTS idx_questions_source ON questions(source);
         CREATE INDEX IF NOT EXISTS idx_code_refs_question ON code_references(question_id);
+
+        -- FTS5 全文搜索索引（BM25 相关性排序）
+        CREATE VIRTUAL TABLE IF NOT EXISTS questions_fts USING fts5(
+            title, answer, hint, category, expected_keywords
+        );
+
+        -- 触发器：保持 FTS 索引与 questions 表同步
+        CREATE TRIGGER IF NOT EXISTS questions_ai AFTER INSERT ON questions BEGIN
+            INSERT INTO questions_fts(rowid, title, answer, hint, category, expected_keywords)
+            VALUES (new.id, new.title, new.answer, new.hint, new.category, new.expected_keywords);
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS questions_ad AFTER DELETE ON questions BEGIN
+            INSERT INTO questions_fts(questions_fts, rowid, title, answer, hint, category, expected_keywords)
+            VALUES ('delete', old.id, old.title, old.answer, old.hint, old.category, old.expected_keywords);
+        END;
+
+        CREATE TRIGGER IF NOT EXISTS questions_au AFTER UPDATE ON questions BEGIN
+            INSERT INTO questions_fts(questions_fts, rowid, title, answer, hint, category, expected_keywords)
+            VALUES ('delete', old.id, old.title, old.answer, old.hint, old.category, old.expected_keywords);
+            INSERT INTO questions_fts(rowid, title, answer, hint, category, expected_keywords)
+            VALUES (new.id, new.title, new.answer, new.hint, new.category, new.expected_keywords);
+        END;
     """)
+
+
+# ============================================================
+# FTS 工具
+# ============================================================
+
+def _escape_fts_query(query: str) -> str:
+    """转义 FTS5 查询中的特殊字符，防止语法错误"""
+    # FTS5 特殊字符：需用双引号包裹含特殊字符的词
+    import re
+    # 先去除首尾空白，再折叠连续空白
+    cleaned = re.sub(r'\s+', ' ', query.strip())
+    # 如果包含 FTS 特殊字符，用双引号包裹整个查询做短语匹配
+    if re.search(r'[+\-*()~"@:&|!<>={}\[\]^#/\\,]', cleaned):
+        return '"' + cleaned.replace('"', '""') + '"'
+    return cleaned
 
 
 # ============================================================
@@ -91,14 +142,20 @@ def list_questions(
     company: Optional[str] = None,
     category: Optional[str] = None,
     search: Optional[str] = None,
+    search_type: str = "fts",
     source: Optional[str] = None,
     page: int = 1,
     page_size: int = 12,
-) -> tuple[list[dict], int]:
-    """分页查询题目列表"""
+) -> Tuple[List[Dict], int]:
+    """分页查询题目列表
+
+    search_type:
+        "fts"  — SQLite FTS5 全文搜索（BM25 相关性排序，中文分词）【默认】
+        "like" — LIKE 子串匹配（旧方案）
+    """
     conn = get_connection()
     conditions = []
-    params: list = []
+    params: List = []
 
     if difficulty:
         conditions.append("difficulty = ?")
@@ -112,33 +169,64 @@ def list_questions(
     if source:
         conditions.append("source = ?")
         params.append(source)
+
+    # ── 搜索逻辑 ────────────────────────────
+    use_fts = False
+    fts_clause = ""
+    order = "ORDER BY id DESC"
+    order_params: List = []
+
     if search:
-        conditions.append("(title LIKE ? OR answer LIKE ?)")
-        params.extend([f"%{search}%", f"%{search}%"])
+        if search_type == "fts":
+            use_fts = True
+            safe_query = _escape_fts_query(search)
+            # FTS5 MATCH 查询，JOIN questions 表获取完整字段
+            fts_clause = (
+                "JOIN questions_fts ON questions.id = questions_fts.rowid "
+                "WHERE questions_fts MATCH ?"
+            )
+            # BM25 rank 负值（越小越相关），用 rank 升序
+            order = "ORDER BY rank"
+            # 先把 MATCH 参数放前面，后面追加 filter 参数
+            params.insert(0, safe_query)
+        else:
+            # 旧方案：LIKE 子串匹配
+            conditions.append("(title LIKE ? OR answer LIKE ?)")
+            params.extend([f"%{search}%", f"%{search}%"])
+            order = "ORDER BY (CASE WHEN title LIKE ? THEN 2 WHEN answer LIKE ? THEN 1 ELSE 0 END) DESC, id DESC"
+            order_params = [f"%{search}%", f"%{search}%"]
 
-    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    where = ""
+    if use_fts:
+        # FTS JOIN 已提供 WHERE，追加额外筛选条件
+        if conditions:
+            where = " AND " + " AND ".join(conditions)
+        from_clause = f"FROM questions {fts_clause}{where}"
+    else:
+        where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+        from_clause = f"FROM questions {where}"
 
-    # 总数
-    count_sql = f"SELECT COUNT(*) FROM questions {where}"
+    # 总数 — FTS 模式下用子查询
+    if use_fts:
+        count_sql = f"SELECT COUNT(*) FROM (SELECT questions.id {from_clause})"
+    else:
+        count_sql = f"SELECT COUNT(*) {from_clause}"
     total = conn.execute(count_sql, params).fetchone()[0]
 
-    # 分页数据 — 有搜索词时按相关性排序（标题命中 > 答案命中），否则按 id 倒序
+    # 分页数据
     offset = (page - 1) * page_size
-    if search:
-        order = "ORDER BY (CASE WHEN title LIKE ? THEN 2 WHEN answer LIKE ? THEN 1 ELSE 0 END) DESC, id DESC"
-        order_params = [f"%{search}%", f"%{search}%"]
+    if use_fts:
+        data_sql = f"SELECT questions.*, rank {from_clause} {order} LIMIT ? OFFSET ?"
     else:
-        order = "ORDER BY id DESC"
-        order_params = []
-    data_sql = f"SELECT * FROM questions {where} {order} LIMIT ? OFFSET ?"
+        data_sql = f"SELECT * {from_clause} {order} LIMIT ? OFFSET ?"
     rows = conn.execute(data_sql, params + order_params + [page_size, offset]).fetchall()
 
     conn.close()
     return [_row_to_dict(r) for r in rows], total
 
 
-def get_question(qid: int) -> Optional[dict]:
-    """获取单题详情（含代码引用）"""
+def get_question(qid: int) -> Optional[Dict]:
+    """获取单题详情（含代码引用，按 score 降序排列）"""
     conn = get_connection()
     q_row = conn.execute("SELECT * FROM questions WHERE id = ?", (qid,)).fetchone()
     if not q_row:
@@ -146,16 +234,22 @@ def get_question(qid: int) -> Optional[dict]:
         return None
 
     refs = conn.execute(
-        "SELECT * FROM code_references WHERE question_id = ?", (qid,)
+        "SELECT * FROM code_references WHERE question_id = ? ORDER BY score DESC",
+        (qid,),
     ).fetchall()
 
     result = _row_to_dict(q_row)
     result["references"] = [_row_to_dict(r) for r in refs]
+
+    # 生成答案内联引用锚点（轻量方案：不改动原始答案，仅返回映射）
+    anchors = _build_reference_anchors(result["answer"], result["references"])
+    result["referenceAnchors"] = anchors
+
     conn.close()
     return result
 
 
-def get_questions_by_difficulty(difficulty: Optional[str] = None) -> list[dict]:
+def get_questions_by_difficulty(difficulty: Optional[str] = None) -> List[Dict]:
     """按难度获取题目列表"""
     questions, _ = list_questions(difficulty=difficulty, page=1, page_size=1000)
     return questions
@@ -248,7 +342,7 @@ def delete_question(qid: int) -> bool:
     return affected
 
 
-def get_filter_options() -> dict:
+def get_filter_options() -> Dict:
     """获取筛选选项（去重后的难度/公司/标签列表）"""
     conn = get_connection()
     difficulties = [r[0] for r in conn.execute(
@@ -268,7 +362,7 @@ def get_filter_options() -> dict:
     }
 
 
-def get_stats() -> dict:
+def get_stats() -> Dict:
     """题库统计"""
     conn = get_connection()
     total = conn.execute("SELECT COUNT(*) FROM questions").fetchone()[0]
@@ -302,13 +396,13 @@ def get_stats() -> dict:
 # ============================================================
 
 def insert_reference(data: dict):
-    """插入代码引用"""
+    """插入代码引用（支持 score）"""
     conn = get_connection()
     conn.execute(
         """
         INSERT INTO code_references (question_id, repo_name, repo_url, file_path,
-                                      line_range, code_snippet, description)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+                                      line_range, code_snippet, description, score)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             data["question_id"],
@@ -318,6 +412,7 @@ def insert_reference(data: dict):
             data.get("line_range", "L1"),
             data.get("code_snippet", ""),
             data.get("description", ""),
+            data.get("score", 0),
         ),
     )
     conn.commit()
@@ -341,9 +436,70 @@ def log_crawl(source: str, pages: int, new_items: int, status: str = "success",
     conn.close()
 
 
+
 # ============================================================
-# 工具函数
+# 引用锚点生成
 # ============================================================
+
+def _build_reference_anchors(answer: str, refs: List[Dict]) -> List[Dict]:
+    """分析引用描述与答案文本的匹配位置，生成内联锚点映射
+
+    返回 [{refId, score, snippet, position}], 其中 position 是答案中的字符偏移
+    """
+    if not answer or not refs:
+        return []
+
+    anchors: List[Dict] = []
+    answer_lower = answer.lower()
+
+    for i, ref in enumerate(refs):
+        desc = ref.get("description", "")
+        desc_words = [w for w in desc.replace("—", " ").replace("：", " ").split() if len(w) >= 2]
+        if not desc_words:
+            continue
+
+        best_pos = -1
+        best_count = 0
+        for word in desc_words[:8]:  # 前 8 个关键词
+            pos = answer_lower.find(word.lower())
+            if pos >= 0:
+                # 统计附近还有多少关键词
+                window = answer_lower[max(0, pos - 100):pos + 200]
+                count = sum(1 for w in desc_words if w.lower() in window)
+                if count > best_count:
+                    best_count = count
+                    best_pos = pos
+
+        if best_pos >= 0 and best_count >= 2:
+            # 取位置前后 80 字符作为上下文片段
+            start = max(0, best_pos - 20)
+            end = min(len(answer), best_pos + 80)
+            snippet = answer[start:end].strip()
+            if start > 0:
+                snippet = "…" + snippet
+            if end < len(answer):
+                snippet = snippet + "…"
+
+            anchors.append({
+                "refId": ref["id"],
+                "score": ref.get("score", 0),
+                "snippet": snippet,
+                "position": best_pos,
+            })
+
+    # 对相近 anchor 去重，保留 score 最高的
+    anchors.sort(key=lambda a: a["position"])
+    merged: List[Dict] = []
+    for a in anchors:
+        if merged and abs(a["position"] - merged[-1]["position"]) < 30:
+            if a["score"] > merged[-1]["score"]:
+                merged[-1] = a
+        else:
+            merged.append(a)
+
+    # 按 position 排序
+    return merged
+
 
 # ============================================================
 # 工具函数
@@ -487,7 +643,7 @@ def generate_tailored_hint(title: str, category: str, difficulty: str = "medium"
     return hints.get(category, "提示：先理解题目考察的核心概念，从定义、原理、实践三个层面递进回答。如果能在回答中结合一个实际项目经验或生产环境案例，会更有说服力。")
 
 
-def _row_to_dict(row: sqlite3.Row) -> dict:
+def _row_to_dict(row: sqlite3.Row) -> Dict:
     """sqlite3.Row → 普通 dict，自动反序列化 JSON 字段"""
     d = dict(row)
     if "expected_keywords" in d and isinstance(d["expected_keywords"], str):

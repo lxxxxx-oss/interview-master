@@ -237,15 +237,22 @@ async def list_questions(
     company: str | None = None,
     category: str | None = None,
     search: str | None = None,
+    search_type: str = "fts",
     page: int = 1,
     page_size: int = 12,
 ):
-    """题库列表，支持筛选 + 分页"""
+    """题库列表，支持筛选 + 分页
+
+    search_type:
+        fts  — SQLite FTS5 全文搜索（BM25 相关性排序，中文分词）【默认】
+        like — LIKE 子串匹配（旧方案）
+    """
     questions, total = db.list_questions(
         difficulty=difficulty,
         company=company,
         category=category,
         search=search,
+        search_type=search_type,
         page=page,
         page_size=page_size,
     )

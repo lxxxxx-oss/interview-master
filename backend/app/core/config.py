@@ -8,7 +8,7 @@
 
 import os
 from pathlib import Path
-
+from typing import List, Optional
 
 class Settings:
     """从环境变量读取配置，提供合理默认值"""
@@ -41,7 +41,7 @@ class Settings:
 
     # ─── CORS — 生产环境通过环境变量追加域名 ────────
     @property
-    def cors_origins(self) -> list[str]:
+    def cors_origins(self) -> List[str]:
         raw = os.getenv(
             "CORS_ORIGINS",
             "http://localhost:5173,http://127.0.0.1:5173",
@@ -60,7 +60,7 @@ class Settings:
         return int(os.getenv("CRAWL_MAX_PAGES", "5"))
 
     @property
-    def nowcoder_cookie(self) -> str | None:
+    def nowcoder_cookie(self) -> Optional[str]:
         """牛客网登录 Cookie（可选，部分面经需要登录才能看全文）"""
         return os.getenv("NOWCODER_COOKIE", None)
 
@@ -84,7 +84,7 @@ class Settings:
         return os.getenv("LLM_ENABLED", "false").lower() in ("1", "true", "yes")
 
     @property
-    def llm_api_key(self) -> str | None:
+    def llm_api_key(self) -> Optional[str]:
         return os.getenv("LLM_API_KEY", None)
 
     @property

@@ -2,7 +2,7 @@
 // QuestionGrid — 虚拟滚动卡片网格 + 无限滚动加载
 // ============================================================
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Empty, Spin } from 'antd'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import Flashcard from './Flashcard'
@@ -10,15 +10,27 @@ import { useAppStore } from '../store'
 
 const COLUMNS = 3
 const CARD_HEIGHT = 220
+const CARD_HEIGHT_MOBILE = 200
 const LOAD_MORE_THRESHOLD = 800 // 距底部多少 px 触发加载
+const MOBILE_BP = 640
 const SCROLL_KEY = 'home_scroll_y'
 
 export default function QuestionGrid() {
   const { filteredQuestions, loading, hasMore, loadMore } = useAppStore()
 
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < MOBILE_BP)
   const rowCount = Math.ceil(filteredQuestions.length / COLUMNS)
   const totalRef = useRef(filteredQuestions.length)
   const loadingMoreRef = useRef(false)
+
+  // 监听窗口尺寸变化，动态切换卡片高度
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < MOBILE_BP)
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  const cardHeight = isMobile ? CARD_HEIGHT_MOBILE : CARD_HEIGHT
 
   // 用 ref 存储最新的 hasMore / loading，避免 scroll 事件闭包过期
   const hasMoreRef = useRef(hasMore)
@@ -37,7 +49,7 @@ export default function QuestionGrid() {
   const virtualizer = useVirtualizer({
     count: rowCount || 1,
     getScrollElement: () => document.documentElement,
-    estimateSize: () => CARD_HEIGHT,
+    estimateSize: () => cardHeight,
     overscan: 3,
   })
 
@@ -104,9 +116,9 @@ export default function QuestionGrid() {
 
   if (loading && filteredQuestions.length === 0) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-[200px] rounded-xl bg-gray-100 animate-pulse" />
+          <div key={i} className="h-[200px] sm:h-[200px] rounded-xl bg-gray-100 animate-pulse" />
         ))}
       </div>
     )
@@ -124,9 +136,9 @@ export default function QuestionGrid() {
           return (
             <div
               key={virtualRow.key}
-              className="absolute top-0 left-0 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+              className="absolute top-0 left-0 w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5"
               style={{
-                height: CARD_HEIGHT,
+                height: cardHeight,
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >

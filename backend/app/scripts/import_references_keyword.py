@@ -9,6 +9,7 @@
 import sys, re
 from pathlib import Path
 from collections import Counter
+from typing import Set, List
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
@@ -63,7 +64,7 @@ KEYWORD_MAP = {
 }
 
 
-def tokenize(text: str) -> set[str]:
+def tokenize(text: str) -> Set[str]:
     """从文本中提取有意义的关键词"""
     text = text.lower()
     tokens = set()
@@ -131,7 +132,7 @@ def import_references_keyword(dry_run=False, clear_first=False, top_k=5):
 
     total_created = 0
     matched_questions = 0
-    score_distribution: list[int] = []
+    score_distribution: List[int] = []
 
     for q in questions:
         qid = q["id"]
@@ -187,6 +188,7 @@ def import_references_keyword(dry_run=False, clear_first=False, top_k=5):
                         "line_range": line_range,
                         "code_snippet": "",
                         "description": desc,
+                        "score": score,
                     })
                 except Exception as e:
                     print(f"  WARN: insert failed Q{qid}: {e}")

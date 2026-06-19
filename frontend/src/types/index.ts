@@ -33,11 +33,21 @@ export interface CodeReference {
   lineRange: string
   codeSnippet: string
   description: string
+  score: number
 }
 
-/** 题目详情 = 题目 + 代码引用 */
+/** 引用锚点（关联答案具体位置） */
+export interface ReferenceAnchor {
+  refId: number
+  score: number
+  snippet: string
+  position: number
+}
+
+/** 题目详情 = 题目 + 代码引用 + 锚点 */
 export interface QuestionDetail extends Question {
   references: CodeReference[]
+  referenceAnchors?: ReferenceAnchor[]
 }
 
 /** 题目状态（localStorage 持久化） */

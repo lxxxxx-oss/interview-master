@@ -4,7 +4,12 @@
 
 import { Layout, Menu } from 'antd'
 import { HomeOutlined, RobotOutlined } from '@ant-design/icons'
+// import { SettingOutlined } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+
+// 环境变量开关 — 与 App.tsx 保持一致
+const ENABLE_INTERVIEW = import.meta.env.VITE_ENABLE_INTERVIEW !== 'false'
+// const ENABLE_ADMIN = import.meta.env.VITE_ENABLE_ADMIN === 'true'
 
 const { Header, Content } = Layout
 
@@ -12,15 +17,14 @@ export default function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  const navItems = [
+  const allNavItems = [
     { key: '/', icon: <HomeOutlined />, label: '面试题库' },
-    { key: '/interview', icon: <RobotOutlined />, label: '模拟面试' },
-    // TODO: 上线时取消注释
-    // { key: '/admin', icon: <SettingOutlined />, label: '管理' },
-  ]
+    ENABLE_INTERVIEW && { key: '/interview', icon: <RobotOutlined />, label: '模拟面试' },
+    // ENABLE_ADMIN && { key: '/admin', icon: <SettingOutlined />, label: '管理' },
+  ].filter(Boolean) as { key: string; icon: React.ReactNode; label: string }[]
 
   const selectedKey =
-    location.pathname.startsWith('/interview') ? '/interview'
+    location.pathname.startsWith('/interview') && ENABLE_INTERVIEW ? '/interview'
     : '/'
 
   return (
@@ -55,7 +59,7 @@ export default function AppLayout() {
         <Menu
           mode="horizontal"
           selectedKeys={[selectedKey]}
-          items={navItems}
+          items={allNavItems}
           onClick={({ key }) => navigate(key)}
           style={{ flex: 1, border: 'none' }}
         />

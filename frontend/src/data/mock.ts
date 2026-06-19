@@ -18,7 +18,8 @@ const refs: Record<number, CodeReference[]> = {
       filePath: 'docs/chapter4/README.md',
       lineRange: 'L1',
       codeSnippet: `# 第四章：智能体经典范式构建\n\n本章手把手带你实现三种经典 Agent 范式：\n1. **ReAct** — 思考-行动-观察循环\n2. **Plan-and-Solve** — 先规划后执行\n3. **Reflection** — 自我反思迭代优化\n\n每种范式都包含完整 Python 实现代码。`,
-      description: '三种经典 Agent 范式的完整讲解与代码实现'
+      description: '三种经典 Agent 范式的完整讲解与代码实现',
+      score: 0.42,
     },
     {
       id: 2, questionId: 1,
@@ -27,7 +28,8 @@ const refs: Record<number, CodeReference[]> = {
       filePath: 'README.md',
       lineRange: 'L1',
       codeSnippet: `# Agentic Design Patterns\n\n谷歌 Agent 设计模式一书的中文翻译版，涵盖：\n- ReAct Pattern\n- Plan-and-Solve Pattern\n- Reflection Pattern\n- Multi-Agent Collaboration\n\n在线阅读：https://adp.xindoo.xyz/`,
-      description: 'Google Agent 设计模式 — 中文翻译版全书'
+      description: 'Google Agent 设计模式 — 中文翻译版全书',
+      score: 0.36,
     },
   ],
   // 题目 3: RAG 概念与流程 → all-in-rag
@@ -39,7 +41,8 @@ const refs: Record<number, CodeReference[]> = {
       filePath: 'README.md',
       lineRange: 'L1',
       codeSnippet: `# All-in-RAG\n\nRAG 技术全栈指南，覆盖从基础到进阶的全部内容：\n\n## 四步构建 RAG 系统\n1. **数据准备** — 多格式文档加载 + 文本分块\n2. **索引构建** — 向量化 + 向量数据库存储\n3. **检索优化** — 混合检索、查询重写、Rerank\n4. **生成集成** — 检索结果注入 LLM 生成回答\n\n在线阅读：https://datawhalechina.github.io/all-in-rag/`,
-      description: 'RAG 技术全栈指南 — 四步构建 RAG 系统的完整教程'
+      description: 'RAG 技术全栈指南 — 四步构建 RAG 系统的完整教程',
+      score: 0.38,
     },
   ],
   // 题目 6: MCP 协议 → learn-claude-code s19
@@ -51,7 +54,8 @@ const refs: Record<number, CodeReference[]> = {
       filePath: 's19_mcp_plugin/README.md',
       lineRange: 'L1',
       codeSnippet: `# s19: MCP Plugin — 外部能力路由\n\nMCP (Model Context Protocol) 让 Agent 动态发现并调用外部工具。\n\n## 核心组件\n- **MCPClient** — 发现并调用外部 MCP Server 的工具\n- **connect_mcp()** — 按名称连接 MCP Server\n- **assemble_tool_pool()** — 动态合并内置 + MCP 工具\n\n外部工具命名规则：\`mcp__{server}__{tool}\`（避免冲突并标识来源）`,
-      description: 'MCP 协议插件实现 — Agent 动态对接外部工具服务'
+      description: 'MCP 协议插件实现 — Agent 动态对接外部工具服务',
+      score: 0.51,
     },
   ],
   // 题目 10: Function Calling / 工具层设计
@@ -63,7 +67,8 @@ const refs: Record<number, CodeReference[]> = {
       filePath: 's02_tool_use/README.md',
       lineRange: 'L1',
       codeSnippet: `# s02: Tool Use — 工具调用\n\n## 核心机制\n- **TOOL_HANDLERS** — 工具分发映射表\n- **dispatch map** — 根据 LLM 输出的工具名路由到对应处理器\n- **并发调用** — 无依赖工具并行执行\n\n\`\`\`python\nTOOL_HANDLERS = {\n    "bash": handle_bash,\n    "read": handle_read,\n    "write": handle_write,\n    "grep": handle_grep,\n}\n\`\`\``,
-      description: '工具调用层的分发机制与并发策略'
+      description: '工具调用层的分发机制与并发策略',
+      score: 0.29,
     },
   ],
 }
